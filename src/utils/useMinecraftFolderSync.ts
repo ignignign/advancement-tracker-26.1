@@ -242,8 +242,18 @@ export function useMinecraftFolderSync({
 
   // Select single JSON file
   const selectFile = useCallback(async () => {
-    if (!('showOpenFilePicker' in window)) {
-      alert('Tu navegador no soporta File System Access API para abrir archivos. Usa el botón de importar normal.');
+    if (typeof window === 'undefined' || !('showOpenFilePicker' in window)) {
+      // Automatic seamless fallback to input[type=file]
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e: any) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          handleFallbackFileImport(file);
+        }
+      };
+      input.click();
       return;
     }
 
@@ -278,9 +288,19 @@ export function useMinecraftFolderSync({
 
       startPolling();
     } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        console.error('Error selecting file:', err);
-      }
+      if (err.name === 'AbortError') return;
+      console.warn('showOpenFilePicker blocked or failed, falling back to input:', err);
+      // Fallback to standard input
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e: any) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          handleFallbackFileImport(file);
+        }
+      };
+      input.click();
     }
   }, [processJsonString, startPolling]);
 

@@ -46,9 +46,37 @@ export const AutoSyncModal: React.FC<AutoSyncModalProps> = ({
   onFileFallbackImport,
 }) => {
   const [activeOsTab, setActiveOsTab] = useState<'win' | 'mac' | 'linux'>('win');
-  const fallbackInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && (file.name.endsWith('.json') || file.type === 'application/json')) {
+      onFileFallbackImport(file);
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onFileFallbackImport(file);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
@@ -190,6 +218,38 @@ export const AutoSyncModal: React.FC<AutoSyncModalProps> = ({
                 Selecciona directamente el archivo JSON de tu jugador dentro de la carpeta advancements de tu mundo.
               </p>
             </button>
+          </div>
+
+          {/* Drag and Drop / Manual Upload Zone (Universal Support) */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
+              isDragging
+                ? 'border-emerald-400 bg-emerald-950/40 text-emerald-300 scale-[1.01]'
+                : 'border-stone-700/80 hover:border-emerald-500/70 bg-stone-900/40 hover:bg-stone-900/80'
+            }`}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".json"
+              onChange={handleFileInput}
+              className="hidden"
+            />
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="p-2 rounded-full bg-stone-800 text-emerald-400">
+                <FileJson className="w-5 h-5" />
+              </div>
+              <span className="font-bold text-xs text-white">
+                Arrastra tu archivo <code className="text-emerald-300 font-mono">&lt;UUID&gt;.json</code> aquí o haz clic para seleccionarlo
+              </span>
+              <span className="text-[11px] text-stone-400">
+                Compatible al 100% con Brave, Chrome, Edge, Firefox y Safari
+              </span>
+            </div>
           </div>
 
           {/* Path helper guides by OS */}
