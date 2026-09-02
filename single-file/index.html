@@ -59,6 +59,32 @@
       </div>
     </header>
 
+    <!-- Auto-Sync Banner -->
+    <div id="sync-banner" class="bg-[#151822] border-2 border-stone-800 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+      <div class="flex items-center gap-3">
+        <div class="p-2 rounded-xl bg-stone-900 border border-stone-800 text-stone-400">
+          <span class="text-lg">📁</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-white">Sincronización Automática con Carpeta "advancements"</span>
+            <span id="sync-status-badge" class="bg-stone-800 text-stone-400 text-[10px] font-bold px-2 py-0.5 rounded-full">Desconectado</span>
+          </div>
+          <p id="sync-status-desc" class="text-xs text-stone-400 mt-0.5">
+            Conecta la carpeta advancements de tu mundo para que los logros se marquen solos en tiempo real
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="connect-folder-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-md transition-all">
+          Conectar Carpeta Mundo
+        </button>
+        <button id="connect-file-btn" class="bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-xs px-3.5 py-1.5 rounded-xl transition-all">
+          Elegir JSON
+        </button>
+      </div>
+    </div>
+
     <!-- Tabs Navigation -->
     <nav class="flex flex-wrap gap-2" id="tabs-container">
       <button data-tab="all" class="tab-btn active px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 border-2 border-emerald-400 text-white shadow-lg transition-all">
@@ -388,6 +414,125 @@
       if (confirm('¿Deseas reiniciar todo tu progreso de logros?')) {
         state.completed = {};
         save();
+      }
+    });
+
+    // Auto-Sync Watcher Logic
+    let autoSyncHandle = null;
+    let autoSyncTimer = null;
+    let lastModifiedTime = 0;
+
+    function parseAdvancementsJson(jsonObj) {
+      let updatedCount = 0;
+      for (const [key, val] of Object.entries(jsonObj)) {
+        if (!val || typeof val !== 'object') continue;
+        const leaf = key.replace(/^minecraft:/, '').replace(/\//g, '_');
+        const leafOnly = key.split('/').pop();
+        
+        // Find matching advancement ID
+        const match = ADVANCEMENTS.find(a => a.id === leaf || a.id === leafOnly || a.id === key);
+        if (match && val.done) {
+          state.completed[match.id] = true;
+          updatedCount++;
+        }
+      }
+      save();
+      return updatedCount;
+    }
+
+    async function checkFileUpdate() {
+      if (!autoSyncHandle) return;
+      try {
+        const file = await autoSyncHandle.getFile();
+        if (file.lastModified !== lastModifiedTime) {
+          lastModifiedTime = file.lastModified;
+          const text = await file.text();
+          const json = JSON.parse(text);
+          parseAdvancementsJson(json);
+          document.getElementById('sync-status-desc').textContent = 
+            `🟢 Monitoreando archivo "${file.name}" en vivo • Última actualización: ${new Date().toLocaleTimeString()}`;
+        }
+      } catch (err) {
+        console.warn('Sync error:', err);
+      }
+    }
+
+    document.getElementById('connect-folder-btn')?.addEventListener('click', async () => {
+      if (!('showDirectoryPicker' in window)) {
+        alert('Tu navegador no soporta selector de carpetas. Usa la opción "Elegir JSON".');
+        return;
+      }
+      try {
+        const dir = await window.showDirectoryPicker();
+        let targetHandle = null;
+        let newest = 0;
+        for await (const [name, handle] of dir.entries()) {
+          if (handle.kind === 'file' && name.endsWith('.json')) {
+            const file = await handle.getFile();
+            if (file.lastModified > newest) {
+              newest = file.lastModified;
+              targetHandle = handle;
+            }
+          }
+        }
+        if (!targetHandle) {
+          alert('No se encontraron archivos .json en la carpeta. Selecciona la carpeta "advancements" de tu mundo.');
+          return;
+        }
+        autoSyncHandle = targetHandle;
+        const file = await targetHandle.getFile();
+        lastModifiedTime = file.lastModified;
+        const text = await file.text();
+        parseAdvancementsJson(JSON.parse(text));
+
+        document.getElementById('sync-status-badge').className = 'bg-emerald-950 text-emerald-300 border border-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full';
+        document.getElementById('sync-status-badge').textContent = 'Conectado en Vivo';
+        document.getElementById('sync-status-desc').textContent = `🟢 Monitoreando "${file.name}" de la carpeta "${dir.name}"`;
+
+        if (autoSyncTimer) clearInterval(autoSyncTimer);
+        autoSyncTimer = setInterval(checkFileUpdate, 1200);
+      } catch (e) {
+        if (e.name !== 'AbortError') alert('Error al acceder a la carpeta: ' + e.message);
+      }
+    });
+
+    document.getElementById('connect-file-btn')?.addEventListener('click', async () => {
+      if ('showOpenFilePicker' in window) {
+        try {
+          const [handle] = await window.showOpenFilePicker({
+            types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+          });
+          if (!handle) return;
+          autoSyncHandle = handle;
+          const file = await handle.getFile();
+          lastModifiedTime = file.lastModified;
+          const text = await file.text();
+          parseAdvancementsJson(JSON.parse(text));
+
+          document.getElementById('sync-status-badge').className = 'bg-emerald-950 text-emerald-300 border border-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full';
+          document.getElementById('sync-status-badge').textContent = 'Conectado en Vivo';
+          document.getElementById('sync-status-desc').textContent = `🟢 Monitoreando archivo "${file.name}"`;
+
+          if (autoSyncTimer) clearInterval(autoSyncTimer);
+          autoSyncTimer = setInterval(checkFileUpdate, 1200);
+        } catch (e) {
+          if (e.name !== 'AbortError') alert('Error: ' + e.message);
+        }
+      } else {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (re) => {
+            parseAdvancementsJson(JSON.parse(re.target.result));
+            alert('¡Logros importados con éxito!');
+          };
+          reader.readAsText(file);
+        };
+        input.click();
       }
     });
 

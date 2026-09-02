@@ -10,7 +10,8 @@ import {
   Trophy,
   Sparkles,
   Layers,
-  Timer
+  Timer,
+  FolderSync
 } from 'lucide-react';
 import { TabId } from '../types';
 
@@ -26,6 +27,8 @@ interface HeaderProps {
   onOpenGitHub: () => void;
   showTimer: boolean;
   onToggleTimer: () => void;
+  isAutoSyncActive: boolean;
+  onOpenAutoSync: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -40,6 +43,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenGitHub,
   showTimer,
   onToggleTimer,
+  isAutoSyncActive,
+  onOpenAutoSync,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -103,6 +108,23 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Quick Action Buttons */}
           <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Auto-Sync Live Status Button */}
+            <button
+              id="header-toggle-sync-btn"
+              onClick={onOpenAutoSync}
+              className={`px-2.5 py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all ${
+                isAutoSyncActive
+                  ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300 shadow-md shadow-emerald-950/40'
+                  : 'bg-stone-900 border-stone-700 text-stone-300 hover:text-white hover:border-emerald-500/60'
+              }`}
+              title={isAutoSyncActive ? "Auto-Sync activo en vivo (clic para ajustes)" : "Conectar carpeta de logros del mundo"}
+            >
+              <FolderSync className={`w-4 h-4 ${isAutoSyncActive ? 'text-emerald-400 animate-spin' : 'text-stone-400'}`} style={isAutoSyncActive ? { animationDuration: '4s' } : {}} />
+              <span className="hidden sm:inline">
+                {isAutoSyncActive ? 'Auto-Sync Activo' : 'Auto-Sync'}
+              </span>
+            </button>
+
             {/* Speedrun Timer toggle */}
             <button
               id="header-toggle-timer-btn"

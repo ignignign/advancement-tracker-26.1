@@ -13,6 +13,10 @@ import { SubCriteriaModal } from './components/SubCriteriaModal';
 import { SpeedrunTimer } from './components/SpeedrunTimer';
 import { GitHubModal } from './components/GitHubModal';
 import { SingleFileExportModal } from './components/SingleFileExportModal';
+import { AutoSyncModal } from './components/AutoSyncModal';
+import { AutoSyncBanner } from './components/AutoSyncBanner';
+import { useMinecraftFolderSync } from './utils/useMinecraftFolderSync';
+import { SyncResult } from './utils/minecraftSync';
 import { Sparkles, Trophy, CheckCircle, Flame } from 'lucide-react';
 
 const STORAGE_KEY = 'minecraft_26_2_advancements_state_v1';
@@ -49,6 +53,31 @@ export default function App() {
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
   const [isSingleFileModalOpen, setIsSingleFileModalOpen] = useState(false);
+  const [isAutoSyncModalOpen, setIsAutoSyncModalOpen] = useState(false);
+
+  // Folder sync callback
+  const handleApplySync = useCallback((syncResult: SyncResult) => {
+    setTrackerState(prev => ({
+      completed: syncResult.completed,
+      subCriteriaProgress: syncResult.subCriteriaProgress,
+      timestamps: syncResult.timestamps
+    }));
+  }, []);
+
+  // Live Auto Watcher Hook for Minecraft world folder
+  const {
+    watcherStatus,
+    recentUnlocked,
+    isSupported,
+    selectDirectory,
+    selectFile,
+    disconnect,
+    manualRefresh,
+    handleFallbackFileImport,
+  } = useMinecraftFolderSync({
+    trackerState,
+    onApplySync: handleApplySync,
+  });
 
   // Sync sound engine
   useEffect(() => {
@@ -369,6 +398,16 @@ export default function App() {
           onOpenGitHub={() => setIsGitHubModalOpen(true)}
           showTimer={showTimer}
           onToggleTimer={() => setShowTimer(!showTimer)}
+          isAutoSyncActive={watcherStatus.active}
+          onOpenAutoSync={() => setIsAutoSyncModalOpen(true)}
+        />
+
+        {/* Live Minecraft World Advancements Folder Auto-Sync Bar */}
+        <AutoSyncBanner
+          status={watcherStatus}
+          onOpenModal={() => setIsAutoSyncModalOpen(true)}
+          onQuickConnect={selectDirectory}
+          onManualRefresh={manualRefresh}
         />
 
         {/* Optional Speedrun Timer Widget */}
@@ -512,6 +551,20 @@ export default function App() {
       <SingleFileExportModal
         isOpen={isSingleFileModalOpen}
         onClose={() => setIsSingleFileModalOpen(false)}
+      />
+
+      {/* Minecraft World Advancements Folder Auto-Sync Modal */}
+      <AutoSyncModal
+        isOpen={isAutoSyncModalOpen}
+        onClose={() => setIsAutoSyncModalOpen(false)}
+        watcherStatus={watcherStatus}
+        onSelectDirectory={selectDirectory}
+        onSelectFile={selectFile}
+        onDisconnect={disconnect}
+        onManualRefresh={manualRefresh}
+        recentUnlocked={recentUnlocked}
+        isSupported={isSupported}
+        onFileFallbackImport={handleFallbackFileImport}
       />
     </div>
   );
