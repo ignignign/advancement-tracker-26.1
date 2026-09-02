@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft Advancements Tracker 26.2 (AA Tool - Archivo Único Autónomo)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            mcDark: '#0d0f14',
+            mcCard: '#151822',
+            mcBorder: '#272b38'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #0d0f14; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #12141c; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #2b3040; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #3e465e; }
+  </style>
+</head>
+<body class="min-h-screen p-4 sm:p-6 text-stone-200 selection:bg-emerald-500/30 selection:text-emerald-200">
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <header class="bg-[#151822] border-2 border-stone-800 rounded-2xl p-5 shadow-2xl flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">⛏️</span>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-2xl font-black text-white tracking-tight">Minecraft AA Tool</h1>
+              <span class="bg-emerald-950 text-emerald-300 border border-emerald-700 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold">v26.2</span>
+              <span class="bg-stone-800 text-stone-300 border border-stone-700 px-2 py-0.5 rounded-full text-[11px] font-bold">126 Logros Oficiales</span>
+            </div>
+            <p class="text-xs text-stone-400 mt-1">Archivo autónomo único • Auto-guardado LocalStorage • 5 Pestañas oficiales</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4 bg-stone-900/90 px-4 py-2.5 rounded-xl border border-stone-800">
+        <div>
+          <div class="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Progreso Global</div>
+          <div id="global-stats-text" class="text-xl font-black text-emerald-400 font-mono">0 / 126 (0%)</div>
+        </div>
+        <div class="w-32 bg-stone-800 h-2.5 rounded-full overflow-hidden border border-stone-700">
+          <div id="global-progress-bar" class="bg-gradient-to-r from-emerald-600 to-teal-400 h-full w-0 transition-all duration-300"></div>
+        </div>
+        <button id="reset-all-btn" class="text-xs bg-red-950/70 hover:bg-red-900 border border-red-800 text-red-300 px-3 py-1.5 rounded-lg transition-colors font-bold">
+          Reiniciar
+        </button>
+      </div>
+    </header>
+
+    <!-- Tabs Navigation -->
+    <nav class="flex flex-wrap gap-2" id="tabs-container">
+      <button data-tab="all" class="tab-btn active px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 border-2 border-emerald-400 text-white shadow-lg transition-all">
+        Todos (126)
+      </button>
+      <button data-tab="minecraft" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-bold bg-[#151822] hover:bg-stone-800 text-stone-400 border-2 border-stone-800 transition-all">
+        Minecraft (16)
+      </button>
+      <button data-tab="nether" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-bold bg-[#151822] hover:bg-stone-800 text-stone-400 border-2 border-stone-800 transition-all">
+        Nether (23)
+      </button>
+      <button data-tab="end" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-bold bg-[#151822] hover:bg-stone-800 text-stone-400 border-2 border-stone-800 transition-all">
+        The End (9)
+      </button>
+      <button data-tab="adventure" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-bold bg-[#151822] hover:bg-stone-800 text-stone-400 border-2 border-stone-800 transition-all">
+        Adventure (47)
+      </button>
+      <button data-tab="husbandry" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-bold bg-[#151822] hover:bg-stone-800 text-stone-400 border-2 border-stone-800 transition-all">
+        Husbandry (31)
+      </button>
+    </nav>
+
+    <!-- Filters Bar -->
+    <div class="bg-[#151822] border-2 border-stone-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+      <div class="relative flex-1 min-w-[260px]">
+        <input 
+          id="search-input" 
+          type="text" 
+          placeholder="Buscar por nombre o requisito..." 
+          class="w-full bg-stone-900 border border-stone-700 rounded-xl px-4 py-2 text-sm text-stone-200 placeholder-stone-500 focus:outline-none focus:border-emerald-500"
+        />
+      </div>
+      <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+        <select id="status-filter" class="bg-stone-900 border border-stone-700 text-stone-300 rounded-xl px-3 py-2 focus:outline-none">
+          <option value="all">Estado: Todos</option>
+          <option value="pending">Solo Pendientes</option>
+          <option value="completed">Solo Completados</option>
+        </select>
+        <select id="type-filter" class="bg-stone-900 border border-stone-700 text-stone-300 rounded-xl px-3 py-2 focus:outline-none">
+          <option value="all">Tipo: Todos</option>
+          <option value="task">Progreso (Task)</option>
+          <option value="goal">Meta (Goal)</option>
+          <option value="challenge">Desafío (Challenge)</option>
+          <option value="hidden">Ocultos / Secretos</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Advancements Grid -->
+    <main id="advancements-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Injected via JavaScript below -->
+    </main>
+  </div>
+
+  <script>
+    // 126 OFFICIAL ADVANCEMENTS VERIFIED LIST
+    const ADVANCEMENTS = [
+      // MINECRAFT (16)
+      { id: 'story_root', tab: 'minecraft', title: 'Minecraft', description: 'The heart and story of the game.', requirement: 'Tener una Crafting Table en el inventario.', type: 'task' },
+      { id: 'mine_stone', tab: 'minecraft', title: 'Stone Age', description: 'Mine stone with your new pickaxe.', requirement: 'Tener Cobblestone, Blackstone o Cobbled Deepslate en el inventario.', type: 'task' },
+      { id: 'upgrade_tools', tab: 'minecraft', title: 'Getting an Upgrade', description: 'Construct a better pickaxe.', requirement: 'Tener un Stone Pickaxe en el inventario.', type: 'task' },
+      { id: 'smelt_iron', tab: 'minecraft', title: 'Acquire Hardware', description: 'Smelt an iron ingot.', requirement: 'Tener un Iron Ingot en el inventario.', type: 'task' },
+      { id: 'obtain_armor', tab: 'minecraft', title: 'Suit Up', description: 'Protect yourself with a piece of iron armor.', requirement: 'Tener cualquier pieza de Iron Armor en el inventario.', type: 'task' },
+      { id: 'lava_bucket', tab: 'minecraft', title: 'Hot Stuff', description: 'Fill a bucket with lava.', requirement: 'Tener un Lava Bucket en el inventario.', type: 'task' },
+      { id: 'iron_tools', tab: 'minecraft', title: "Isn't It Iron Pick?", description: 'Upgrade your pickaxe.', requirement: 'Tener un Iron Pickaxe en el inventario.', type: 'task' },
+      { id: 'deflect_arrow', tab: 'minecraft', title: 'Not Today, Thank You', description: 'Block a projectile with a shield.', requirement: 'Deflectar un proyectil con un Shield.', type: 'task' },
+      { id: 'form_obsidian', tab: 'minecraft', title: 'Ice Bucket Challenge', description: 'Obtain a block of obsidian.', requirement: 'Tener Obsidian en el inventario.', type: 'task' },
+      { id: 'mine_diamond', tab: 'minecraft', title: 'Diamonds!', description: 'Acquire diamonds.', requirement: 'Tener un Diamond en el inventario.', type: 'task' },
+      { id: 'enter_the_nether', tab: 'minecraft', title: 'We Need to Go Deeper', description: 'Build, light, and enter a Nether Portal.', requirement: 'Entrar a la dimensión Nether.', type: 'task' },
+      { id: 'shiny_gear', tab: 'minecraft', title: 'Cover Me with Diamonds', description: 'Wear a full suit of diamond armor.', requirement: 'Tener Diamond Armor en el inventario.', type: 'task' },
+      { id: 'enchant_item', tab: 'minecraft', title: 'Enchanter', description: 'Enchant an item at an Enchanting Table.', requirement: 'Usar una Enchanting Table y aplicar un encantamiento.', type: 'task' },
+      { id: 'cure_zombie_villager', tab: 'minecraft', title: 'Zombie Doctor', description: 'Weaken and then cure a Zombie Villager.', requirement: 'Usar un Golden Apple en un Zombie Villager debilitado.', type: 'goal' },
+      { id: 'follow_ender_eye', tab: 'minecraft', title: 'Eye Spy', description: 'Follow an Eye of Ender.', requirement: 'Seguir un Eye of Ender hacia un Stronghold.', type: 'task' },
+      { id: 'enter_the_end', tab: 'minecraft', title: 'The End?', description: 'Enter The End.', requirement: 'Entrar al End Portal.', type: 'task' },
+
+      // NETHER (23)
+      { id: 'nether_root', tab: 'nether', title: 'Nether', description: 'Bring summer clothes.', requirement: 'Entrar al Nether.', type: 'task' },
+      { id: 'return_to_sender', tab: 'nether', title: 'Return to Sender', description: 'Destroy a Ghast with a fireball.', requirement: 'Matar un Ghast reflejando su fireball.', type: 'challenge' },
+      { id: 'find_bastion', tab: 'nether', title: 'Those Were the Days', description: 'Enter a Bastion Remnant.', requirement: 'Entrar a un Bastion Remnant.', type: 'task' },
+      { id: 'obtain_ancient_debris', tab: 'nether', title: 'Hidden in the Depths', description: 'Obtain Ancient Debris.', requirement: 'Tener Ancient Debris en el inventario.', type: 'task' },
+      { id: 'fast_travel', tab: 'nether', title: 'Subspace Bubble', description: 'Use the Nether to travel 7 km in the Overworld.', requirement: 'Usar el Nether para viajar al menos 7000 bloques horizontales en el Overworld.', type: 'challenge' },
+      { id: 'find_fortress', tab: 'nether', title: 'A Terrible Fortress', description: 'Break into a Nether Fortress.', requirement: 'Entrar a un Nether Fortress.', type: 'task' },
+      { id: 'obtain_crying_obsidian', tab: 'nether', title: 'Who is Cutting Onions?', description: 'Obtain Crying Obsidian.', requirement: 'Tener Crying Obsidian en el inventario.', type: 'task' },
+      { id: 'distract_piglin', tab: 'nether', title: 'Oh Shiny', description: 'Distract Piglins with gold.', requirement: 'Usar un ítem de oro en un Piglin adulto sin llevar armadura dorada.', type: 'task' },
+      { id: 'ride_strider', tab: 'nether', title: 'This Boat Has Legs', description: 'Ride a Strider with a Warped Fungus on a Stick.', requirement: 'Montar un Strider usando un Warped Fungus on a Stick.', type: 'task' },
+      { id: 'uneasy_alliance', tab: 'nether', title: 'Uneasy Alliance', description: 'Rescue a Ghast from the Nether, bring it safely home to the Overworld... and then kill it.', requirement: 'Matar un Ghast mientras se está en el Overworld.', type: 'challenge' },
+      { id: 'loot_bastion', tab: 'nether', title: 'War Pigs', description: 'Loot a chest in a Bastion Remnant.', requirement: 'Abrir un cofre en un Bastion Remnant.', type: 'task' },
+      { id: 'netherite_armor', tab: 'nether', title: 'Cover Me in Debris', description: 'Wear a full suit of Netherite armor.', requirement: 'Tener un set completo de Netherite Armor en el inventario.', type: 'challenge' },
+      { id: 'get_wither_skull', tab: 'nether', title: 'Spooky Scary Skeleton', description: "Obtain a Wither Skeleton's skull.", requirement: 'Tener un Wither Skeleton Skull en el inventario.', type: 'task' },
+      { id: 'obtain_blaze_rod', tab: 'nether', title: 'Into Fire', description: 'Relieve a Blaze of its rod.', requirement: 'Tener un Blaze Rod en el inventario.', type: 'task' },
+      { id: 'charge_respawn_anchor', tab: 'nether', title: 'Not Quite "Nine" Lives', description: 'Charge a Respawn Anchor to the maximum.', requirement: 'Cargar completamente un Respawn Anchor.', type: 'task' },
+      { id: 'ride_strider_in_overworld_lava', tab: 'nether', title: 'Feels Like Home', description: 'Take a Strider for a loong ride on a lava lake in the Overworld.', requirement: 'Montar un Strider en un lago de lava en el Overworld.', type: 'task' },
+      { id: 'explore_nether', tab: 'nether', title: 'Hot Tourist Destinations', description: 'Visit all Nether biomes.', requirement: 'Visitar los 5 biomas del Nether.', type: 'challenge' },
+      { id: 'summon_wither', tab: 'nether', title: 'Withering Heights', description: 'Summon the Wither.', requirement: 'Invocar al Wither.', type: 'task' },
+      { id: 'brew_potion', tab: 'nether', title: 'Local Brewery', description: 'Brew a Potion.', requirement: 'Fabricar cualquier poción en una Brewing Stand.', type: 'task' },
+      { id: 'create_beacon', tab: 'nether', title: 'Bring Home the Beacon', description: 'Construct and place a Beacon.', requirement: 'Activar un Beacon sobre una pirámide.', type: 'challenge' },
+      { id: 'all_potions', tab: 'nether', title: 'A Furious Cocktail', description: 'Have every potion effect applied at the same time.', requirement: 'Tener los 17 efectos de estado activos simultáneamente.', type: 'challenge' },
+      { id: 'create_full_beacon', tab: 'nether', title: 'Beaconator', description: 'Bring a beacon to full power.', requirement: 'Activar un Beacon con una pirámide completa de nivel 4.', type: 'challenge' },
+      { id: 'all_effects', tab: 'nether', title: 'How Did We Get Here?', description: 'Have every effect applied at the same time.', requirement: 'Tener los 34 efectos de estado activos simultáneamente.', type: 'challenge', hidden: true },
+
+      // THE END (9)
+      { id: 'end_root', tab: 'end', title: 'The End', description: 'Or the beginning?', requirement: 'Entrar al End.', type: 'task' },
+      { id: 'kill_dragon', tab: 'end', title: 'Free the End', description: 'Good luck.', requirement: 'Matar al Ender Dragon.', type: 'challenge' },
+      { id: 'dragon_egg', tab: 'end', title: 'The Next Generation', description: 'Hold the Dragon Egg.', requirement: 'Tener el Dragon Egg en el inventario.', type: 'goal' },
+      { id: 'enter_end_gateway', tab: 'end', title: 'Remote Getaway', description: 'Escape the island.', requirement: 'Entrar a un End Gateway.', type: 'task' },
+      { id: 'respawn_dragon', tab: 'end', title: 'The End... Again...', description: 'Respawn the Ender Dragon.', requirement: 'Invocar al Ender Dragon con End Crystals.', type: 'task' },
+      { id: 'dragon_breath', tab: 'end', title: 'You Need a Mint', description: "Collect Dragon's Breath in a glass bottle.", requirement: "Tener Dragon's Breath en el inventario.", type: 'task' },
+      { id: 'find_end_city', tab: 'end', title: 'The City at the End of the Game', description: 'Go on in, what could happen?', requirement: 'Entrar a un End City.', type: 'task' },
+      { id: 'elytra', tab: 'end', title: "Sky's the Limit", description: 'Find Elytra.', requirement: 'Tener Elytra en el inventario.', type: 'goal' },
+      { id: 'levitate', tab: 'end', title: 'Great View From Up Here', description: 'Levitate up 50 blocks from the attacks of a Shulker.', requirement: 'Subir 50 bloques verticales con el efecto Levitation.', type: 'challenge' },
+
+      // ADVENTURE (47)
+      { id: 'adventure_root', tab: 'adventure', title: 'Adventure', description: 'Adventure, exploration, and combat.', requirement: 'Matar o ser matado por cualquier entidad viviente.', type: 'task' },
+      { id: 'heart_transplanter', tab: 'adventure', title: 'Heart Transplanter', description: 'Pale Garden heart placement.', requirement: 'Colocar un Creaking Heart entre bloques de Pale Oak Log.', type: 'task' },
+      { id: 'voluntary_exile', tab: 'adventure', title: 'Voluntary Exile', description: 'Kill a raid captain. Maybe consider staying away from villages for a time...', requirement: 'Matar un Raid Captain (Pillager, Evoker, Illusioner o Vindicator con Ominous Banner).', type: 'task', hidden: true },
+      { id: 'lodestone', tab: 'adventure', title: 'Country Lode, Take Me Home', description: 'Use a Compass on a Lodestone.', requirement: 'Usar un Compass en un Lodestone.', type: 'task' },
+      { id: 'spyglass_at_parrot', tab: 'adventure', title: 'Is It a Bird?', description: 'Look at a parrot through a spyglass.', requirement: 'Apuntar con un Spyglass a un Parrot.', type: 'task' },
+      { id: 'kill_a_mob', tab: 'adventure', title: 'Monster Hunter', description: 'Kill any hostile monster.', requirement: 'Matar uno de los 41 monstruos de la lista.', type: 'task' },
+      { id: 'chiseled_bookshelf', tab: 'adventure', title: 'The Power of Books', description: 'Read the signal of a Chiseled Bookshelf with a Comparator.', requirement: 'Activar un comparador conectado a un Chiseled Bookshelf.', type: 'task' },
+      { id: 'trade', tab: 'adventure', title: 'What a Deal!', description: 'Successfully trade with a Villager.', requirement: 'Completar una transacción con un Villager o Wandering Trader.', type: 'task' },
+      { id: 'trim_armor', tab: 'adventure', title: 'Crafting a New Look', description: 'Craft a trimmed armor at a Smithing Table.', requirement: 'Aplicar cualquier Armor Trim a cualquier pieza de armadura.', type: 'task' },
+      { id: 'honey_block_slide', tab: 'adventure', title: 'Sticky Situation', description: 'Jump into a Honey Block to break your fall.', requirement: 'Deslizarse por un Honey Block mientras se cae.', type: 'task' },
+      { id: 'shoot_crossbow', tab: 'adventure', title: "Ol' Betsy", description: 'Shoot a crossbow.', requirement: 'Disparar un Crossbow.', type: 'task' },
+      { id: 'lightning_rod_protect_villager', tab: 'adventure', title: 'Surge Protector', description: 'Protect a Villager from a lightning strike that would have set them on fire using a Lightning Rod.', requirement: 'Un rayo atraído por un Lightning Rod no causar incendio, con un Villager ileso cerca.', type: 'challenge' },
+      { id: 'fall_from_world_height', tab: 'adventure', title: 'Caves & Cliffs', description: 'Free fall from the top of the world (build limit) to the bottom of the world and survive.', requirement: 'Caer desde Y=319 hasta Y=-59 con un Water Bucket.', type: 'challenge' },
+      { id: 'brush_suspicious_block', tab: 'adventure', title: 'Respecting the Remnants', description: 'Brush a Pottery Sherd from a suspicious block.', requirement: 'Usar un Brush en Suspicious Sand o Suspicious Gravel para obtener un Pottery Sherd.', type: 'task' },
+      { id: 'sneak_near_sculk_sensor', tab: 'adventure', title: 'Sneak 100', description: 'Sneak near a Sculk Sensor or Warden to prevent it from detecting you.', requirement: 'Agacharse cerca de un Sculk Sensor, Sculk Shrieker o Warden sin ser detectado.', type: 'challenge' },
+      { id: 'sleep_in_bed', tab: 'adventure', title: 'Sweet Dreams', description: 'Sleep in a bed to change your respawn point.', requirement: 'Acostarse en una cama (aunque sea un instante).', type: 'task' },
+      { id: 'hero_of_the_village', tab: 'adventure', title: 'Hero of the Village', description: 'Successfully defend a village from a raid.', requirement: 'Defender con éxito una aldea de una raid.', type: 'challenge', hidden: true },
+      { id: 'spyglass_at_ghast', tab: 'adventure', title: 'Is It a Balloon?', description: 'Look at a Ghast through a spyglass.', requirement: 'Apuntar con un Spyglass a un Ghast.', type: 'task' },
+      { id: 'throw_trident', tab: 'adventure', title: 'A Throwaway Joke', description: 'Throw a Trident at something. Note: Tridents can be retrieved.', requirement: 'Matar cualquier mob con un Trident lanzado.', type: 'task' },
+      { id: 'kill_mob_near_sculk_catalyst', tab: 'adventure', title: 'It Spreads', description: 'Kill a mob near a Sculk Catalyst.', requirement: 'Matar un mob cerca de un Sculk Catalyst (excepto Ender Dragon).', type: 'task' },
+      { id: 'shoot_arrow', tab: 'adventure', title: 'Take Aim', description: 'Shoot something with an arrow.', requirement: 'Matar un mob con una Arrow, Tipped Arrow o Spectral Arrow.', type: 'task' },
+      { id: 'kill_all_mobs', tab: 'adventure', title: 'Monsters Hunted', description: 'Kill one of every hostile monster.', requirement: 'Matar uno de cada uno de los 41 monstruos de la lista.', type: 'challenge' },
+      { id: 'totem_of_undying', tab: 'adventure', title: 'Postmortal', description: 'Use a Totem of Undying to cheat death.', requirement: 'Sobrevivir un golpe fatal gracias a un Totem of Undying.', type: 'challenge' },
+      { id: 'mob_kabob', tab: 'adventure', title: 'Mob Kabob', description: 'Skewer a mob with a spear.', requirement: 'Ensartar un mob con la nueva arma lanza.', type: 'goal' },
+      { id: 'summon_iron_golem', tab: 'adventure', title: 'Hired Help', description: 'Summon an Iron Golem to help defend a village.', requirement: 'Invocar un Iron Golem.', type: 'task' },
+      { id: 'trade_at_world_height', tab: 'adventure', title: 'Star Trader', description: 'Trade with a Villager at the build height limit.', requirement: 'Comerciar con un Villager o Wandering Trader estando en Y>318.', type: 'task' },
+      { id: 'smithing_with_style', tab: 'adventure', title: 'Smithing with Style', description: 'Apply these smithing templates at least once: Spire, Snout, Rib, Ward, Silence, Vex, Tide, Wayfinder.', requirement: 'Aplicar los 8 Armor Trims especificados.', type: 'challenge' },
+      { id: 'two_birds_one_arrow', tab: 'adventure', title: 'Two Birds, One Arrow', description: 'Kill two Phantoms with a piercing arrow.', requirement: 'Matar dos Phantoms con una sola flecha usando Piercing en un Crossbow.', type: 'challenge' },
+      { id: 'whos_the_pillager_now', tab: 'adventure', title: "Who's the Pillager Now?", description: 'Give a Pillager a taste of their own medicine.', requirement: 'Matar un Pillager con un disparo de Crossbow.', type: 'task' },
+      { id: 'arbalistic', tab: 'adventure', title: 'Arbalistic', description: 'Kill five unique mobs with one crossbow shot.', requirement: 'Matar 5 mobs distintos con un solo disparo de Crossbow.', type: 'challenge', hidden: true },
+      { id: 'craft_decorated_pot', tab: 'adventure', title: 'Careful Restoration', description: 'Make a Decorated Pot out of 4 Pottery Sherds.', requirement: 'Craftar un Decorated Pot usando 4 Pottery Sherds.', type: 'task' },
+      { id: 'adventuring_time', tab: 'adventure', title: 'Adventuring Time', description: 'Discover every biome.', requirement: 'Visitar los 55 biomas del Overworld.', type: 'challenge' },
+      { id: 'play_jukebox_in_meadows', tab: 'adventure', title: 'Sound of Music', description: 'Make the Meadows come alive with the sound of music from a Jukebox.', requirement: 'Colocar un Music Disc en un Jukebox dentro de un Meadow.', type: 'task' },
+      { id: 'walk_on_powder_snow', tab: 'adventure', title: 'Light as a Rabbit', description: 'Walk on Powder Snow with Leather Boots.', requirement: 'Caminar sobre Powder Snow con Leather Boots puestas.', type: 'task' },
+      { id: 'spyglass_at_dragon', tab: 'adventure', title: 'Is It a Plane?', description: 'Look at the Ender Dragon through a spyglass.', requirement: 'Apuntar con un Spyglass al Ender Dragon.', type: 'task' },
+      { id: 'lightning_strike_villager', tab: 'adventure', title: 'Very Very Frightening', description: 'Strike a Villager with lightning.', requirement: 'Golpear a un Villager con un rayo invocado por un Trident con Channeling.', type: 'challenge' },
+      { id: 'sniper_duel', tab: 'adventure', title: 'Sniper Duel', description: 'Kill a Skeleton from at least 50 meters away.', requirement: 'Matar un Skeleton desde al menos 50 bloques de distancia horizontal.', type: 'challenge' },
+      { id: 'bullseye', tab: 'adventure', title: 'Bullseye', description: 'Hit the bullseye of a Target block from at least 30 meters away.', requirement: 'Disparar el centro de un Target block desde 30 bloques o más.', type: 'challenge' },
+      { id: 'brush_armadillo', tab: 'adventure', title: "Isn't It Scute?", description: 'Get an Armadillo Scute from an Armadillo using a Brush.', requirement: 'Usar un Brush en un Armadillo para obtener una Armadillo Scute.', type: 'task' },
+      { id: 'trial_chamber_enter', tab: 'adventure', title: 'Minecraft: Trial(s) Edition', description: 'Step foot in a Trial Chamber.', requirement: 'Entrar a un Trial Chamber.', type: 'task' },
+      { id: 'crafter_crafting_crafter', tab: 'adventure', title: 'Crafters Crafting Crafters', description: 'Have a Crafter craft a Crafter.', requirement: 'Usar un Crafter para fabricar otro Crafter.', type: 'task' },
+      { id: 'scrape_copper_bulb', tab: 'adventure', title: 'Lighten Up', description: 'Scrape a Copper Bulb with an axe to make it brighter.', requirement: 'Usar cualquier tipo de hacha en un Copper Bulb lit que esté al menos parcialmente oxidado.', type: 'task' },
+      { id: 'wind_charge_launch', tab: 'adventure', title: 'Who Needs Rockets?', description: 'Use a Wind Charge to launch yourself upward at least 7 blocks.', requirement: 'Caer al menos 7 bloques desde donde explotó un Wind Charge que te afectó.', type: 'challenge' },
+      { id: 'open_vault', tab: 'adventure', title: 'Under Lock and Key', description: 'Open a Vault using a Trial Key.', requirement: 'Usar un Trial Key en un Vault.', type: 'task' },
+      { id: 'open_ominous_vault', tab: 'adventure', title: 'Revaulting', description: 'Open an Ominous Vault using an Ominous Trial Key.', requirement: 'Usar un Ominous Trial Key en un Ominous Vault.', type: 'goal' },
+      { id: 'kill_breeze_with_wind_charge', tab: 'adventure', title: 'Blowback', description: 'Kill a Breeze using a deflected Wind Charge.', requirement: 'Matar un Breeze con un Wind Charge rebotado por el propio Breeze.', type: 'challenge' },
+      { id: 'mace_overkill', tab: 'adventure', title: 'Over-Overkill', description: 'Deal 50 hearts of damage in a single hit using a Mace.', requirement: 'Infligir el daño equivalente a 50 corazones de una sola vez con un Mace (smash attack).', type: 'challenge' },
+
+      // HUSBANDRY (31)
+      { id: 'husbandry_root', tab: 'husbandry', title: 'Husbandry', description: 'The world is full of friends and food.', requirement: 'Comer cualquier alimento.', type: 'task' },
+      { id: 'stay_hydrated', tab: 'husbandry', title: 'Stay Hydrated!', description: 'Place a Dried Ghast in water.', requirement: 'Colocar un Dried Ghast en agua.', type: 'task' },
+      { id: 'bee_nest_campfire', tab: 'husbandry', title: 'Bee Our Guest', description: 'Use a Campfire to collect Honey from a Beehive using a Bottle without aggravating the bees.', requirement: 'Colocar una Campfire bajo una Beehive o Bee Nest llena y recoger miel con una Glass Bottle.', type: 'task' },
+      { id: 'breed_an_animal', tab: 'husbandry', title: 'The Parrots and the Bats', description: 'Breed two animals together.', requirement: 'Reproducir cualquiera de los 27 animales de la lista.', type: 'task' },
+      { id: 'allay_deliver_item', tab: 'husbandry', title: "You've Got a Friend in Me", description: 'Have an Allay deliver items to you.', requirement: 'Dar un ítem a un Allay y que te lo devuelva con más ítems.', type: 'task', hidden: true },
+      { id: 'ride_boat_with_goat', tab: 'husbandry', title: 'Whatever Floats Your Goat!', description: 'Get in a boat with a Goat.', requirement: 'Montarse en un bote junto a un Goat.', type: 'task' },
+      { id: 'tame_an_animal', tab: 'husbandry', title: 'Best Friends Forever', description: 'Tame an animal.', requirement: 'Domar cualquiera de los 11 animales de la lista.', type: 'task' },
+      { id: 'glow_ink_sac_sign', tab: 'husbandry', title: 'Glow and Behold!', description: 'Make the text of a sign glow.', requirement: 'Usar un Glow Ink Sac en un Sign o Hanging Sign.', type: 'task' },
+      { id: 'catch_fish', tab: 'husbandry', title: 'Fishy Business', description: 'Catch a fish.', requirement: 'Tener en el inventario Cod, Salmon, Tropical Fish o Pufferfish (no necesariamente pescado con caña).', type: 'task' },
+      { id: 'move_bee_nest_silk_touch', tab: 'husbandry', title: 'Total Beelocation', description: 'Move a Bee Nest, with 3 bees inside, using Silk Touch.', requirement: 'Romper un Bee Nest o Beehive con 3 abejas dentro usando Silk Touch.', type: 'task' },
+      { id: 'tadpole_in_bucket', tab: 'husbandry', title: 'Bukkit Bukkit', description: 'Catch a Tadpole in a Bucket.', requirement: 'Usar un Water Bucket en un Tadpole.', type: 'task' },
+      { id: 'sulfur_cube_absorb_tnt', tab: 'husbandry', title: 'Uh Oh', description: 'Passive Sulfur Cube absorbs a block of TNT.', requirement: 'Que un Sulfur Cube pasivo absorba un bloque de TNT.', type: 'task' },
+      { id: 'obtain_sniffer_egg', tab: 'husbandry', title: 'Smells Interesting', description: 'Obtain a Sniffer Egg.', requirement: 'Tener un Sniffer Egg en el inventario.', type: 'task', hidden: true },
+      { id: 'plant_seed', tab: 'husbandry', title: 'A Seedy Place', description: 'Plant a seed and watch it grow.', requirement: 'Plantar cualquiera de las semillas de la lista (incluyendo Torchflower Seeds y Pitcher Pod).', type: 'task' },
+      { id: 'wax_on_copper', tab: 'husbandry', title: 'Wax On', description: 'Apply Honeycomb to a Copper block.', requirement: 'Usar Honeycomb en cualquiera de los 15 bloques de cobre enceables.', type: 'task' },
+      { id: 'breed_all_animals', tab: 'husbandry', title: 'Two by Two', description: 'Breed all the animals.', requirement: 'Reproducir una pareja de cada uno de los 26 animales de la lista.', type: 'challenge' },
+      { id: 'allay_drop_cake_note_block', tab: 'husbandry', title: 'Birthday Song', description: 'Have an Allay drop a Cake at a Note Block.', requirement: 'Que un Allay que recibió un pastel del jugador deje caer otro pastel en un Note Block.', type: 'task', hidden: true },
+      { id: 'tame_all_cats', tab: 'husbandry', title: 'A Complete Catalogue', description: 'Tame all cat variants.', requirement: 'Domar las 11 variantes de Cat.', type: 'challenge' },
+      { id: 'catch_fish_bucket', tab: 'husbandry', title: 'Tactical Fishing', description: 'Catch a fish, without a fishing rod.', requirement: 'Usar un Water Bucket en un pez vivo para capturarlo.', type: 'task' },
+      { id: 'lead_all_frogs', tab: 'husbandry', title: 'When the Squad Hops into Town', description: 'Get a lead on all Frogs.', requirement: 'Poner una Lead a 4 Frogs (no necesitan estar atadas a la vez).', type: 'task' },
+      { id: 'feed_snifflet', tab: 'husbandry', title: 'Little Sniffs', description: 'Feed a Snifflet.', requirement: 'Dar comida a un Snifflet.', type: 'task', hidden: true },
+      { id: 'balanced_diet', tab: 'husbandry', title: 'A Balanced Diet', description: "Eat everything that is edible, even if it's not good for you.", requirement: 'Comer cada uno de los 40 alimentos de la lista.', type: 'challenge' },
+      { id: 'netherite_hoe_till_earth', tab: 'husbandry', title: 'Serious Dedication', description: 'Use a Netherite hoe to till the earth.', requirement: 'Tener un Netherite Hoe en el inventario.', type: 'challenge' },
+      { id: 'wax_off_copper', tab: 'husbandry', title: 'Wax Off', description: 'Scrape wax off a Copper block.', requirement: 'Usar un Axe en cualquiera de los 15 bloques de cobre enceados para retirar la cera.', type: 'task' },
+      { id: 'catch_axolotl_bucket', tab: 'husbandry', title: 'The Cutest Predator', description: 'Catch an Axolotl in a Bucket.', requirement: 'Usar un Water Bucket en un Axolotl.', type: 'task' },
+      { id: 'froglights_all', tab: 'husbandry', title: 'With Our Powers Combined!', description: 'Have a full set of Froglights in your inventory.', requirement: 'Tener los 3 tipos de Froglight (ochre, pearlescent, verdant) en el inventario a la vez.', type: 'goal' },
+      { id: 'plant_sniffer_seed', tab: 'husbandry', title: 'Planting the Past', description: 'Plant any Sniffer seed.', requirement: 'Plantar Torchflower Seeds o Pitcher Pod.', type: 'task', hidden: true },
+      { id: 'axolotl_healing_friendship', tab: 'husbandry', title: 'The Healing Power of Friendship!', description: 'Emerge from battle with your Axolotl.', requirement: 'Matar un mob mientras el jugador tiene el efecto Regeneration otorgado por un Axolotl.', type: 'task' },
+      { id: 'repair_wolf_armor', tab: 'husbandry', title: 'Good as New', description: 'Repair a damaged Wolf Armor to full durability.', requirement: 'Reparar Wolf Armor hasta durabilidad completa usando Armadillo Scutes.', type: 'task' },
+      { id: 'tame_all_wolf_variants', tab: 'husbandry', title: 'The Whole Pack', description: 'Tame one of each variant of Wolf.', requirement: 'Domar las 9 variantes de Wolf.', type: 'challenge' },
+      { id: 'shear_wolf_armor', tab: 'husbandry', title: 'Shear Brilliance', description: 'Remove Wolf Armor from a Wolf using Shears.', requirement: 'Usar Shears en un lobo con Wolf Armor para quitársela.', type: 'task' }
+    ];
+
+    const STORAGE_KEY = 'mc_26_2_advancements_standalone_v1';
+    let state = {
+      completed: JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'),
+      currentTab: 'all',
+      search: '',
+      status: 'all',
+      type: 'all'
+    };
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.completed));
+      render();
+    }
+
+    function toggleAdvancement(id) {
+      state.completed[id] = !state.completed[id];
+      save();
+    }
+
+    function render() {
+      const grid = document.getElementById('advancements-grid');
+      const search = state.search.toLowerCase().trim();
+
+      let completedCount = 0;
+      ADVANCEMENTS.forEach(a => { if (state.completed[a.id]) completedCount++; });
+      const totalCount = ADVANCEMENTS.length;
+      const pct = Math.round((completedCount / totalCount) * 100);
+
+      document.getElementById('global-stats-text').textContent = completedCount + ' / ' + totalCount + ' (' + pct + '%)';
+      document.getElementById('global-progress-bar').style.width = pct + '%';
+
+      const filtered = ADVANCEMENTS.filter(a => {
+        if (state.currentTab !== 'all' && a.tab !== state.currentTab) return false;
+        if (state.status === 'completed' && !state.completed[a.id]) return false;
+        if (state.status === 'pending' && state.completed[a.id]) return false;
+        if (state.type === 'hidden') {
+          if (!a.hidden) return false;
+        } else if (state.type !== 'all' && a.type !== state.type) {
+          return false;
+        }
+        if (search) {
+          const matchTitle = a.title.toLowerCase().includes(search);
+          const matchDesc = a.description.toLowerCase().includes(search);
+          const matchReq = a.requirement.toLowerCase().includes(search);
+          if (!matchTitle && !matchDesc && !matchReq) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="col-span-full bg-[#151822] border-2 border-stone-800 rounded-2xl text-center py-16 text-stone-500 font-bold">No se encontraron logros que coincidan con los filtros.</div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(a => {
+        const isDone = !!state.completed[a.id];
+        const isChallenge = a.type === 'challenge';
+        const isGoal = a.type === 'goal';
+
+        let borderClass = 'border-stone-800 bg-[#151822]';
+        let badgeColor = 'bg-stone-800 text-stone-400 border-stone-700';
+
+        if (isDone) {
+          if (isChallenge) {
+            borderClass = 'border-purple-500/80 bg-purple-950/30 ring-1 ring-purple-500/40 shadow-lg shadow-purple-900/20';
+            badgeColor = 'bg-purple-900 text-purple-200 border-purple-600';
+          } else if (isGoal) {
+            borderClass = 'border-amber-500/80 bg-amber-950/30 ring-1 ring-amber-500/40 shadow-lg shadow-amber-900/20';
+            badgeColor = 'bg-amber-900 text-amber-200 border-amber-600';
+          } else {
+            borderClass = 'border-emerald-500/80 bg-emerald-950/30 ring-1 ring-emerald-500/40 shadow-lg shadow-emerald-900/20';
+            badgeColor = 'bg-emerald-900 text-emerald-200 border-emerald-600';
+          }
+        }
+
+        return `
+          <div class="border-2 rounded-xl p-4 transition-all duration-200 ${borderClass} flex flex-col justify-between select-none">
+            <div>
+              <div class="flex items-start justify-between gap-2 mb-2.5">
+                <div>
+                  <h3 class="font-bold text-base ${isDone ? 'text-white' : 'text-stone-200'}">${a.title}</h3>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded border ${badgeColor}">${a.type === 'challenge' ? 'Desafío' : a.type === 'goal' ? 'Meta' : 'Progreso'}</span>
+                    <span class="text-xs text-stone-400 capitalize">${a.tab}</span>
+                  </div>
+                </div>
+                <button 
+                  onclick="toggleAdvancement('${a.id}')"
+                  class="px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${isDone ? 'bg-emerald-600 text-white border-emerald-400 shadow-md' : 'bg-stone-900 text-stone-400 border-stone-700 hover:border-stone-500 hover:text-stone-200'}"
+                >
+                  ${isDone ? '✓ Completado' : '○ Marcar'}
+                </button>
+              </div>
+              <p class="text-xs text-stone-300 mb-2 leading-relaxed">${a.description}</p>
+              <div class="bg-black/40 p-2.5 rounded-lg text-xs text-stone-400 border border-stone-800/80">
+                <span class="text-stone-500 font-bold uppercase tracking-wider text-[10px] block mb-0.5">Requisito:</span>
+                <span class="text-stone-300">${a.requirement}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.className = 'tab-btn px-4 py-2.5 rounded-xl text-sm font-bold bg-[#151822] hover:bg-stone-800 text-stone-400 border-2 border-stone-800 transition-all';
+        });
+        btn.className = 'tab-btn active px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 border-2 border-emerald-400 text-white shadow-lg transition-all';
+        state.currentTab = btn.getAttribute('data-tab');
+        render();
+      });
+    });
+
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      state.search = e.target.value;
+      render();
+    });
+
+    document.getElementById('status-filter').addEventListener('change', (e) => {
+      state.status = e.target.value;
+      render();
+    });
+
+    document.getElementById('type-filter').addEventListener('change', (e) => {
+      state.type = e.target.value;
+      render();
+    });
+
+    document.getElementById('reset-all-btn').addEventListener('click', () => {
+      if (confirm('¿Deseas reiniciar todo tu progreso de logros?')) {
+        state.completed = {};
+        save();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>

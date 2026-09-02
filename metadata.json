@@ -1,0 +1,6 @@
+{
+  "name": "Minecraft Advancements Tracker 26.2 (AA Tool)",
+  "description": "Herramienta interactiva para el seguimiento de los 126 logros oficiales de Minecraft 26.2 con soporte para AA speedruns, sub-criterios y persistencia.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
